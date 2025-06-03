@@ -48,6 +48,7 @@ TestResults/
 # User-specific files
 *.DS_Store
 Thumbs.db
+Literateca/appsettings.json
 
 # Azure Web App publishing
 .publish/
