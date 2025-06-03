@@ -1,73 +1,73 @@
 using Literateca.Communications.Requests;
 using Literateca.Communications.Responses;
+using Literateca.Data;
 using Literateca.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Literateca.Controllers;
 
 public class LivroController : BaseController
 {
-    private static readonly List<Livro> _livros = new List<Livro>();
-    private static int _proximoId = 0;
-    
     // Adiciona o livro
     [HttpPost]
     [ProducesResponseType(typeof(CreatedLivroResponse), StatusCodes.Status201Created)]
-    public IActionResult CriaLivro(
-        [FromBody]
-        CreateLivroRequest request)
+    public async Task <IActionResult> CriaLivro(
+        [FromBody] CreateLivroRequest request, [FromServices] AppDbContext context)
     {
-        int novoId = _livros.Count + 1;
 
-        var novoLivro = new Livro() 
+        var livro = new Livro()
         {
-            Id = novoId,
             Titulo = request.Titulo,
             Autor = request.Autor,
             Genero = request.Genero,
             Preco = request.Preco,
             Quantidade = request.Quantidade,
         };
-
-        _livros.Add(novoLivro);
+        
+        await context.Livros.AddAsync(livro);
+        await context.SaveChangesAsync();
 
         var response = new CreatedLivroResponse()
         {
-            Id = novoLivro.Id,
-            Titulo = novoLivro.Titulo,
-            Autor = novoLivro.Autor,
+            Id = livro.Id,
+            Titulo = livro.Titulo,
         };
         
         return Created(string.Empty, response);
     }
 
     // Busca todos os livros
-    [ProducesResponseType(typeof(Livro), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [HttpGet]
-    public IActionResult ListaLivros()
+    public async Task <IActionResult> ListaLivros(
+        [FromServices] AppDbContext context)
     {
-        return Ok(_livros);
+        var livros = await context.Livros.ToListAsync();
+
+        return Ok(livros);
     }
     
     // Busca o livro pelo o Id
     [ProducesResponseType(typeof(Livro), StatusCodes.Status200OK)]
     [HttpGet("{id}")]
-    public IActionResult ListaLivrosPorId(
-        [FromRoute]int id)
+    public async Task <IActionResult> ListaLivrosPorId(
+        [FromRoute]int id, [FromServices] AppDbContext context)
     {
-        var livroAchado = _livros.FirstOrDefault(l => l.Id == id);
+        var livro = await context.Livros.FirstOrDefaultAsync(x => x.Id == id);
         
-        return Ok(livroAchado);
+        return Ok(livro);
     }
 
     // Atualiza o livro
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(CreatedLivroResponse), StatusCodes.Status200OK)]
-    public IActionResult AtualizaLivro(
+    public async Task <IActionResult> AtualizaLivro(
         [FromRoute] int id,
-        [FromBody] UpdateLivroRequest request)
+        [FromBody] UpdateLivroRequest request,
+        [FromServices] AppDbContext context)
     {
-        var livroParaAtualizar = _livros.Find(livro => livro.Id == id);
+        var livroParaAtualizar = await context.Livros.FirstOrDefaultAsync(x => x.Id == id);
 
         if (livroParaAtualizar != null)
         {
@@ -76,27 +76,25 @@ public class LivroController : BaseController
             livroParaAtualizar.Genero = request.Genero;
             livroParaAtualizar.Preco = request.Preco;
             livroParaAtualizar.Quantidade = request.Quantidade;
+            
+            context.Livros.Update(livroParaAtualizar);
+            await context.SaveChangesAsync();
         }
-
-        var response = new CreatedLivroResponse()
-        {
-            Id = livroParaAtualizar.Id,
-            Titulo = livroParaAtualizar.Titulo,
-            Autor = livroParaAtualizar.Autor,
-        };
-
-        return Ok(response);
+    
+        return Ok();
     }
-
+    
     // Exclui o livro
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public IActionResult DeletaLivro(
-        [FromRoute] int id)
+    public async Task <IActionResult> DeletaLivro(
+        [FromRoute] int id,
+        [FromServices] AppDbContext context)
     {
-        var livroAchado = _livros.FirstOrDefault(l => l.Id == id);
-        
-        _livros.Remove(livroAchado);
+        var livro = await context.Livros.FirstOrDefaultAsync(x => x.Id == id);
+
+        context.Livros.Remove(livro);
+        await context.SaveChangesAsync();
         
         return NoContent();
     }
