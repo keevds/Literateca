@@ -19,6 +19,6 @@ Liste as principais funcionalidades da sua API.
 <h2>Tecnologias Utilizadas</h2>
 
 - **Linguagem:** C#
-- **Framework:** ASP.NET Core (ou a versão específica que você usou, ex: .NET 8)
+- **Framework:** ASP.NET Core
 - **Documentação da API:** Swagger (OpenAPI)
-- **Armazenamento de Dados:** Em memória
+- **Armazenamento de Dados:** SQL Server
